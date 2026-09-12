@@ -10,7 +10,7 @@ Alt under er ting **du** må gjøre (krever din Apple-konto/betaling). Følg rek
 
 ## 2. Registrer App ID
 
-[developer.apple.com/account/resources/identifiers](https://developer.apple.com/account/resources/identifiers/list) → **+** → App IDs → App → Bundle ID: `no.hoff.HvaHvor` (Explicit, ikke wildcard).
+[developer.apple.com/account/resources/identifiers](https://developer.apple.com/account/resources/identifiers/list) → **+** → App IDs → App → Bundle ID: `no.digital60plus.HvaHvor` (Explicit, ikke wildcard).
 
 ## 3. Last opp sertifikatforespørselen (CSR)
 
@@ -35,7 +35,7 @@ Send meg `distribution.cer`-filen du lastet ned (si ifra når du har den), så p
 
 ## 7. Opprett app-oppføringen i App Store Connect
 
-**My Apps** → **+** → New App → Bundle ID: `no.hoff.HvaHvor`, navn: `HvaHvor`, SKU: valgfri (f.eks. `hvahvor-001`).
+**My Apps** → **+** → New App → Bundle ID: `no.digital60plus.HvaHvor`, navn: `HvaHvor`, SKU: valgfri (f.eks. `hvahvor-001`).
 
 ## 8. Legg til GitHub-hemmeligheter
 
