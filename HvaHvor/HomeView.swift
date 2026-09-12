@@ -1,5 +1,20 @@
 import SwiftUI
 import SwiftData
+import Foundation
+
+enum SortOption: String, CaseIterable, Identifiable {
+    case sistEndret, sted, type
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .sistEndret: return "Sist endret"
+        case .sted: return "Sted (A–Å)"
+        case .type: return "Type (A–Å)"
+        }
+    }
+}
 
 struct HomeView: View {
     @Query(sort: \Entry.sistEndret, order: .reverse) private var entries: [Entry]
@@ -7,6 +22,7 @@ struct HomeView: View {
     @State private var searchText = ""
     @State private var selectedPlace: String?
     @State private var showingNewEntry = false
+    @State private var sortOption: SortOption = .sistEndret
 
     private var places: [String] {
         let unique = Set(entries.map(\.sted)).filter { !$0.isEmpty }
@@ -23,9 +39,54 @@ struct HomeView: View {
         }
     }
 
+    private func sorted(_ list: [Entry]) -> [Entry] {
+        switch sortOption {
+        case .sistEndret:
+            return list.sorted { $0.sistEndret > $1.sistEndret }
+        case .sted:
+            return list.sorted { $0.sted.localizedStandardCompare($1.sted) == .orderedAscending }
+        case .type:
+            return list.sorted { $0.type.localizedStandardCompare($1.type) == .orderedAscending }
+        }
+    }
+
+    private var sortedFiltered: [Entry] {
+        sorted(filtered)
+    }
+
     private var resultCountLabel: String {
         let n = filtered.count
         return n == 1 ? "1 OPPFØRING" : "\(n) OPPFØRINGER"
+    }
+
+    private func exportFileURL() -> URL {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd"
+        let filename = "HvaHvor-eksport-\(df.string(from: .now)).csv"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        try? makeCSV(for: sorted(entries)).write(to: url, atomically: true, encoding: .utf8)
+        return url
+    }
+
+    private func makeCSV(for list: [Entry]) -> String {
+        let dateFormat = DateFormatter()
+        dateFormat.dateStyle = .short
+        dateFormat.timeStyle = .short
+
+        var lines = ["Sted;Plassering;Type;Info;Kommentar;Sist endret"]
+        for entry in list {
+            let fields = [
+                entry.sted, entry.plassering, entry.type, entry.info, entry.kommentar,
+                dateFormat.string(from: entry.sistEndret),
+            ]
+            lines.append(fields.map(csvEscape).joined(separator: ";"))
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private func csvEscape(_ field: String) -> String {
+        guard field.contains(";") || field.contains("\"") || field.contains("\n") else { return field }
+        return "\"" + field.replacingOccurrences(of: "\"", with: "\"\"") + "\""
     }
 
     var body: some View {
@@ -54,7 +115,7 @@ struct HomeView: View {
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 12) {
-                                    ForEach(filtered) { entry in
+                                    ForEach(sortedFiltered) { entry in
                                         NavigationLink(value: entry) {
                                             EntryCard(entry: entry)
                                         }
@@ -81,15 +142,29 @@ struct HomeView: View {
     }
 
     private var titleBlock: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("HVAHVOR")
-                .font(HH.kicker(11))
-                .kickerStyle()
-                .foregroundStyle(HH.goldLight)
-            Text("Hva finner jeg hvor")
-                .font(HH.heading(30, weight: .black))
-                .lineSpacing(2)
-                .foregroundStyle(.white)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("HVAHVOR")
+                    .font(HH.kicker(11))
+                    .kickerStyle()
+                    .foregroundStyle(HH.goldLight)
+                Text("Hva finner jeg hvor")
+                    .font(HH.heading(30, weight: .black))
+                    .lineSpacing(2)
+                    .foregroundStyle(.white)
+            }
+            Spacer()
+            if !entries.isEmpty {
+                ShareLink(item: exportFileURL()) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(HH.textSecondary1)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(HH.surfaceFill))
+                        .overlay(Circle().stroke(HH.borderSubtle, lineWidth: 1))
+                }
+                .padding(.top, 2)
+            }
         }
     }
 
@@ -153,9 +228,27 @@ struct HomeView: View {
                     .tracking(1.1)
                     .foregroundStyle(HH.textSecondary1)
                 Spacer()
-                Text("Sist endret ↓")
+                Menu {
+                    ForEach(SortOption.allCases) { option in
+                        Button {
+                            sortOption = option
+                        } label: {
+                            if sortOption == option {
+                                Label(option.label, systemImage: "checkmark")
+                            } else {
+                                Text(option.label)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(sortOption.label)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 9, weight: .semibold))
+                    }
                     .font(HH.body(11))
                     .foregroundStyle(HH.textSecondary1)
+                }
             }
         }
     }
