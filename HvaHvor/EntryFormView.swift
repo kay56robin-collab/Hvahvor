@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import PhotosUI
+import UIKit
 
 struct EntryFormView: View {
     var entry: Entry?
@@ -13,6 +15,8 @@ struct EntryFormView: View {
     @State private var info: String = ""
     @State private var kommentar: String = ""
     @State private var farge: String?
+    @State private var bildeData: Data?
+    @State private var selectedPhotoItem: PhotosPickerItem?
 
     private var isValid: Bool {
         !sted.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -31,6 +35,7 @@ struct EntryFormView: View {
                         field("Info", text: $info)
                         textAreaField("Kommentar", text: $kommentar)
                         colorField
+                        photoField
                     }
                     .padding(.horizontal, 22)
                     .padding(.top, 20)
@@ -60,6 +65,12 @@ struct EntryFormView: View {
             .toolbarBackground(.visible, for: .navigationBar)
         }
         .onAppear(perform: loadDraft)
+        .onChange(of: selectedPhotoItem) { _, newItem in
+            Task {
+                guard let data = try? await newItem?.loadTransferable(type: Data.self) else { return }
+                bildeData = downscaled(data)
+            }
+        }
     }
 
     private func loadDraft() {
@@ -70,6 +81,7 @@ struct EntryFormView: View {
         info = entry.info
         kommentar = entry.kommentar
         farge = entry.farge
+        bildeData = entry.bilde
     }
 
     private func save() {
@@ -80,6 +92,7 @@ struct EntryFormView: View {
             entry.info = info
             entry.kommentar = kommentar
             entry.farge = farge
+            entry.bilde = bildeData
             entry.sistEndret = .now
         } else {
             let newEntry = Entry(
@@ -89,11 +102,24 @@ struct EntryFormView: View {
                 info: info,
                 kommentar: kommentar,
                 farge: farge,
-                sistEndret: .now
+                sistEndret: .now,
+                bilde: bildeData
             )
             modelContext.insert(newEntry)
         }
         dismiss()
+    }
+
+    /// Skalerer ned til maks `maxDimension` px og komprimerer til JPEG, så lokal lagring
+    /// (og evt. iCloud-synk av SwiftData-storen) ikke svulmer opp av rå kamerabilder.
+    private func downscaled(_ data: Data, maxDimension: CGFloat = 1600, quality: CGFloat = 0.7) -> Data {
+        guard let image = UIImage(data: data) else { return data }
+        let scale = min(1, maxDimension / max(image.size.width, image.size.height))
+        guard scale < 1 else { return image.jpegData(compressionQuality: quality) ?? data }
+        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
+        return resized.jpegData(compressionQuality: quality) ?? data
     }
 
     @ViewBuilder
@@ -148,6 +174,48 @@ struct EntryFormView: View {
                             )
                     }
                     .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var photoField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Bilde")
+                .font(HH.body(12, weight: .semibold))
+                .foregroundStyle(HH.textSecondary1)
+            if let bildeData, let uiImage = UIImage(data: bildeData) {
+                ZStack(alignment: .topTrailing) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 180)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .clipped()
+                    Button {
+                        self.bildeData = nil
+                        self.selectedPhotoItem = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.white, .black.opacity(0.5))
+                            .padding(8)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
+                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "photo.on.rectangle")
+                        Text("Legg til bilde")
+                    }
+                    .font(HH.body(14, weight: .semibold))
+                    .foregroundStyle(HH.textSecondary1)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(HH.surfaceFill))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(HH.borderSubtle, lineWidth: 1))
                 }
             }
         }

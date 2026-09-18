@@ -12,6 +12,8 @@ final class Entry {
     /// Hex-streng ("#rrggbb") eller nil for ingen farge.
     var farge: String?
     var sistEndret: Date
+    /// JPEG-data for et valgfritt bilde, lagret utenfor selve databasefilen.
+    @Attribute(.externalStorage) var bilde: Data?
 
     init(
         sted: String = "",
@@ -20,7 +22,8 @@ final class Entry {
         info: String = "",
         kommentar: String = "",
         farge: String? = nil,
-        sistEndret: Date = .now
+        sistEndret: Date = .now,
+        bilde: Data? = nil
     ) {
         self.sted = sted
         self.plassering = plassering
@@ -29,5 +32,6 @@ final class Entry {
         self.kommentar = kommentar
         self.farge = farge
         self.sistEndret = sistEndret
+        self.bilde = bilde
     }
 }

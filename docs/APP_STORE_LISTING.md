@@ -32,9 +32,18 @@ FUNKSJONER
 • Sortering – etter sist endret, sted eller type
 • Eksport – ta ut hele registeret som CSV når du vil ha en backup eller se alt i et regneark
 • Fargemerking – gi oppføringer en fargeprikk for rask gjenkjenning
+• Bilde – legg ved et bilde på hver oppføring, f.eks. av fargekoden eller gjenstanden selv
 
 PERSONVERN
 HvaHvor har ingen bakgrunnsprosesser, ingen sporing, ingen reklame og ingen nettverkstilgang i det hele tatt. Det du skriver inn blir værende på telefonen din.
+```
+
+## What's New in This Version (versjon 1.1)
+
+```
+Nytt i denne versjonen:
+• Legg ved et bilde på hver oppføring
+• Eksporter registeret som en ekte kommaseparert CSV-fil
 ```
 
 ## Keywords (maks 100 tegn totalt, kommaseparert)

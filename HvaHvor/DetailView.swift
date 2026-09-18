@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct DetailView: View {
     @Bindable var entry: Entry
@@ -20,6 +21,16 @@ struct DetailView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
                         titleBlock
+
+                        if let bilde = entry.bilde, let uiImage = UIImage(data: bilde) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 220)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .clipped()
+                        }
 
                         Rectangle().fill(HH.divider).frame(height: 1)
 

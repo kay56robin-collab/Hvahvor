@@ -73,19 +73,19 @@ struct HomeView: View {
         dateFormat.dateStyle = .short
         dateFormat.timeStyle = .short
 
-        var lines = ["Sted;Plassering;Type;Info;Kommentar;Sist endret"]
+        var lines = ["Sted,Plassering,Type,Info,Kommentar,Sist endret"]
         for entry in list {
             let fields = [
                 entry.sted, entry.plassering, entry.type, entry.info, entry.kommentar,
                 dateFormat.string(from: entry.sistEndret),
             ]
-            lines.append(fields.map(csvEscape).joined(separator: ";"))
+            lines.append(fields.map(csvEscape).joined(separator: ","))
         }
         return lines.joined(separator: "\n")
     }
 
     private func csvEscape(_ field: String) -> String {
-        guard field.contains(";") || field.contains("\"") || field.contains("\n") else { return field }
+        guard field.contains(",") || field.contains("\"") || field.contains("\n") else { return field }
         return "\"" + field.replacingOccurrences(of: "\"", with: "\"\"") + "\""
     }
 
